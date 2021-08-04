@@ -2,12 +2,38 @@ import 'package:flutter/material.dart';
 
 import 'package:app_peliculas/src/models/models.dart';
 
-class MovieSlider extends StatelessWidget {
+class MovieSlider extends StatefulWidget {
   final String? title;
+  final Function onNextPage;
   final List<Movie> movies;
 
-  const MovieSlider({Key? key, this.title, required this.movies})
+  const MovieSlider(
+      {Key? key, this.title, required this.movies, required this.onNextPage})
       : super(key: key);
+
+  @override
+  _MovieSliderState createState() => _MovieSliderState();
+}
+
+class _MovieSliderState extends State<MovieSlider> {
+  final ScrollController scrollController = new ScrollController();
+  @override
+  void initState() {
+    super.initState();
+    scrollController.addListener(() {
+      if (scrollController.position.pixels >=
+          scrollController.position.maxScrollExtent - 500) {
+        widget.onNextPage();
+      }
+      print(scrollController.position.maxScrollExtent);
+    });
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,19 +43,21 @@ class MovieSlider extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (this.title != null)
+          if (this.widget.title != null)
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Text(
-                this.title!,
+                this.widget.title!,
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
           Expanded(
             child: ListView.builder(
+              controller: scrollController,
               scrollDirection: Axis.horizontal,
-              itemCount: movies.length,
-              itemBuilder: (_, int index) => _MoviePoster(this.movies[index]),
+              itemCount: widget.movies.length,
+              itemBuilder: (_, int index) =>
+                  _MoviePoster(this.widget.movies[index]),
             ),
           ),
         ],
@@ -57,7 +85,7 @@ class _MoviePoster extends StatelessWidget {
             onTap: () => Navigator.pushNamed(
               context,
               'details',
-              arguments: 'movie-instance',
+              arguments: movie,
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),

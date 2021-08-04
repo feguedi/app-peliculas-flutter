@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
+
+import 'package:app_peliculas/src/models/models.dart';
 import 'package:app_peliculas/src/widgets/widgets.dart';
 
 class DetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final String movie =
-        ModalRoute.of(context)?.settings.arguments.toString() ?? 'no-movie';
+    final Movie movie = ModalRoute.of(context)!.settings.arguments as Movie;
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          _CustomAppBar(),
+          _CustomAppBar(title: movie.title, backdrop: movie.fullBackDropPath),
           SliverList(
             delegate: SliverChildListDelegate([
-              _PosterAndTitle(),
-              _Overview(),
-              _Overview(),
-              _Overview(),
-              _Overview(),
+              _PosterAndTitle(
+                title: movie.title,
+                poster: movie.fullMovieImg,
+                originalTitle: movie.originalTitle,
+                voteAverage: movie.voteAverage,
+              ),
+              _Overview(movie.overview),
               CastingCards(),
             ]),
           )
@@ -28,6 +31,12 @@ class DetailsScreen extends StatelessWidget {
 }
 
 class _CustomAppBar extends StatelessWidget {
+  final String title;
+  final String backdrop;
+
+  const _CustomAppBar({Key? key, required this.title, required this.backdrop})
+      : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return SliverAppBar(
@@ -41,7 +50,7 @@ class _CustomAppBar extends StatelessWidget {
         title: Container(
           width: double.infinity,
           alignment: Alignment.bottomCenter,
-          padding: EdgeInsets.only(bottom: 10),
+          padding: EdgeInsets.only(bottom: 10, left: 10, right: 10),
           // color: Colors.black12,
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -54,13 +63,16 @@ class _CustomAppBar extends StatelessWidget {
             ),
           ),
           child: Text(
-            'movie.title',
+            title,
             style: TextStyle(fontSize: 16),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
+            textAlign: TextAlign.center,
           ),
         ),
         background: FadeInImage(
           placeholder: AssetImage('assets/loading.gif'),
-          image: NetworkImage('https://via.placeholder.com/500x300'),
+          image: NetworkImage(backdrop),
           fit: BoxFit.cover,
         ),
       ),
@@ -69,9 +81,23 @@ class _CustomAppBar extends StatelessWidget {
 }
 
 class _PosterAndTitle extends StatelessWidget {
+  final String title;
+  final String originalTitle;
+  final String poster;
+  final double voteAverage;
+
+  const _PosterAndTitle(
+      {Key? key,
+      required this.title,
+      required this.poster,
+      required this.originalTitle,
+      required this.voteAverage})
+      : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final size = MediaQuery.of(context).size;
 
     return Container(
       margin: EdgeInsets.only(
@@ -84,52 +110,85 @@ class _PosterAndTitle extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: FadeInImage(
+              width: size.width * 0.33,
               placeholder: AssetImage('assets/no-image.jpg'),
-              image: NetworkImage('https://via.placeholder.com/200x300'),
-              height: 200,
+              image: NetworkImage(poster),
             ),
           ),
-          SizedBox(
-            width: 20,
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'movie.title',
-                style: textTheme.headline5,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 2,
-              ),
-              Text(
-                'movie.originalTitle',
-                style: textTheme.subtitle1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Row(
-                children: [
-                  Icon(Icons.star_outline, size: 15, color: Colors.grey),
-                  SizedBox(
-                    width: 5,
-                  ),
-                  Text('movie.voteAvarage', style: textTheme.caption),
-                ],
-              ),
-            ],
+          SizedBox(width: 20),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: size.width * 0.5),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: textTheme.headline5,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                ),
+                Text(
+                  originalTitle,
+                  style: textTheme.subtitle1,
+                  overflow: TextOverflow.visible,
+                ),
+                SizedBox(height: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [..._renderStars()]),
+                    SizedBox(width: 5),
+                    Text('$voteAverage', style: textTheme.caption),
+                  ],
+                ),
+              ],
+            ),
           )
         ],
       ),
     );
   }
+
+  List<Icon> _renderStars() {
+    final List<Icon> _stars = [];
+    final Icon _emptyStarIcon =
+        Icon(Icons.star_outline, size: 15, color: Colors.grey);
+    final Icon _halfStarIcon =
+        Icon(Icons.star_half_outlined, size: 15, color: Colors.grey);
+    final Icon _fullStarIcon =
+        Icon(Icons.star_outlined, size: 15, color: Colors.grey);
+
+    final double _decimal = voteAverage - voteAverage.toInt();
+
+    for (int i = 1; i <= 10; i++) {
+      if (i == voteAverage.toInt()) {
+        if (_decimal >= 0.5) {
+          _stars.add(_halfStarIcon);
+        } else {
+          _stars.add(_emptyStarIcon);
+        }
+      } else if (i < voteAverage.toInt()) {
+        _stars.add(_fullStarIcon);
+      } else if (i > voteAverage.toInt()) {
+        _stars.add(_emptyStarIcon);
+      }
+    }
+
+    return _stars;
+  }
 }
 
 class _Overview extends StatelessWidget {
+  final String str;
+
+  const _Overview(this.str);
+
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Text(
-        'Et aliqua id reprehenderit qui magna duis magna nostrud est dolor velit nisi nisi. Ea et exercitation exercitation ullamco laboris ea ea occaecat voluptate. Velit ut et officia amet nulla culpa excepteur magna adipisicing. Officia pariatur veniam eu consectetur in non duis magna voluptate occaecat.',
+        str,
         textAlign: TextAlign.justify,
         style: Theme.of(context).textTheme.subtitle1,
       ),

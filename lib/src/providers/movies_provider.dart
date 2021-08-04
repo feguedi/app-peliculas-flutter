@@ -11,11 +11,12 @@ class MoviesProvider extends ChangeNotifier {
   Map<String, String> _queryParams = {
     'api_key': '15f125923a68d42c056286f68d673dd3',
     'language': 'es-MX',
-    'page': '1',
   };
 
   List<Movie> onDisplayMovies = [];
   List<Movie> popularMovies = [];
+
+  int _popularPage = 0;
 
   MoviesProvider() {
     print('MoviesProvider inicializado');
@@ -23,11 +24,13 @@ class MoviesProvider extends ChangeNotifier {
     this.getPopularMovies();
   }
 
-  getRequest(String endpoint) async {
+  getRequest(String endpoint, [int page = 1]) async {
     try {
       final apiEndpoint = '$_api/$endpoint';
-      final url = Uri.https(_baseUrl, apiEndpoint, _queryParams);
-      print('url: ${url.toString()}');
+      final requestQueryParams = {'page': '$page', ..._queryParams};
+
+      final url = Uri.https(_baseUrl, apiEndpoint, requestQueryParams);
+
       final response = await http.get(url);
       final statusCode = response.statusCode;
       final body = response.body;
@@ -63,6 +66,7 @@ class MoviesProvider extends ChangeNotifier {
 
   getPopularMovies() async {
     try {
+      _popularPage++;
       final responseBody = await getRequest('popular');
       final popularResponse = PopularResponse.fromJson(responseBody);
 
