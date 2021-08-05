@@ -21,7 +21,7 @@ class DetailsScreen extends StatelessWidget {
                 voteAverage: movie.voteAverage,
               ),
               _Overview(movie.overview),
-              CastingCards(),
+              CastingCards(movie.id),
             ]),
           )
         ],
@@ -152,15 +152,15 @@ class _PosterAndTitle extends StatelessWidget {
   List<Icon> _renderStars() {
     final List<Icon> _stars = [];
     final Icon _emptyStarIcon =
-        Icon(Icons.star_outline, size: 15, color: Colors.grey);
+        Icon(Icons.star_outline, size: 15, color: Colors.indigo);
     final Icon _halfStarIcon =
-        Icon(Icons.star_half_outlined, size: 15, color: Colors.grey);
+        Icon(Icons.star_half_outlined, size: 15, color: Colors.indigo);
     final Icon _fullStarIcon =
-        Icon(Icons.star_outlined, size: 15, color: Colors.grey);
+        Icon(Icons.star_outlined, size: 15, color: Colors.indigo);
 
     final double _decimal = voteAverage - voteAverage.toInt();
 
-    for (int i = 1; i <= 10; i++) {
+    for (int i = 0; i < 10; i++) {
       if (i == voteAverage.toInt()) {
         if (_decimal >= 0.5) {
           _stars.add(_halfStarIcon);
