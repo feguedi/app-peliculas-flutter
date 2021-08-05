@@ -1,3 +1,4 @@
+import 'package:app_peliculas/src/models/search_movies_response.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -7,7 +8,7 @@ import 'package:app_peliculas/src/models/models.dart';
 
 class MoviesProvider extends ChangeNotifier {
   String _baseUrl = 'api.themoviedb.org';
-  String _api = '3/movie';
+  String _api = '3';
   Map<String, String> _queryParams = {
     'api_key': '15f125923a68d42c056286f68d673dd3',
     'language': 'es-MX',
@@ -25,12 +26,18 @@ class MoviesProvider extends ChangeNotifier {
     this.getPopularMovies();
   }
 
-  getRequest(String endpoint, [int page = 1]) async {
+  getRequest(String endpoint, {String q = '', int page = 1}) async {
     try {
+      print('solicitando datos');
       final apiEndpoint = '$_api/$endpoint';
       final requestQueryParams = {'page': '$page', ..._queryParams};
+      if (q.isNotEmpty) {
+        requestQueryParams['query'] = q;
+      }
 
       final url = Uri.https(_baseUrl, apiEndpoint, requestQueryParams);
+
+      print('url: ${url.toString()}');
 
       final response = await http.get(url);
       final statusCode = response.statusCode;
@@ -52,7 +59,7 @@ class MoviesProvider extends ChangeNotifier {
 
   getOnDisplayMovies() async {
     try {
-      final responseBody = await getRequest('now_playing');
+      final responseBody = await getRequest('movie/now_playing');
       final nowPlayingResponse = NowPlayingResponse.fromJson(responseBody);
       print(nowPlayingResponse.results[0].title);
 
@@ -68,7 +75,7 @@ class MoviesProvider extends ChangeNotifier {
   getPopularMovies() async {
     try {
       _popularPage++;
-      final responseBody = await getRequest('popular');
+      final responseBody = await getRequest('movie/popular');
       final popularResponse = PopularResponse.fromJson(responseBody);
 
       popularMovies = [...popularMovies, ...popularResponse.results];
@@ -84,11 +91,25 @@ class MoviesProvider extends ChangeNotifier {
       return moviesCast[movieId]!;
     }
 
-    final jsonData = await this.getRequest('$movieId/credits');
+    final jsonData = await this.getRequest('movie/$movieId/credits');
     final creditsResponse = CreditsResponse.fromJson(jsonData);
 
     moviesCast[movieId] = creditsResponse.cast;
 
     return creditsResponse.cast;
+  }
+
+  Future<List<Movie>> searchMovies(String query) async {
+    try {
+      if (query.length < 3) {
+        return [];
+      }
+      final response = await getRequest('search/movie', q: query);
+      final searchMovieResponse = SearchMovieResponse.fromJson(response);
+
+      return searchMovieResponse.movies;
+    } catch (e) {
+      throw ErrorWidget.withDetails(message: e.toString());
+    }
   }
 }
