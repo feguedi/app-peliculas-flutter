@@ -1,10 +1,12 @@
-import 'package:app_peliculas/src/models/search_movies_response.dart';
+import 'dart:async';
+import 'package:app_peliculas/src/helpers/debouncer.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 // import 'package:app_peliculas/src/models/now_playing_response.dart';
 import 'package:app_peliculas/src/models/now_playing_response.dart';
 import 'package:app_peliculas/src/models/models.dart';
+import 'package:app_peliculas/src/models/search_movies_response.dart';
 
 class MoviesProvider extends ChangeNotifier {
   String _baseUrl = 'api.themoviedb.org';
@@ -19,6 +21,13 @@ class MoviesProvider extends ChangeNotifier {
   Map<int, List<Cast>> moviesCast = {};
 
   int _popularPage = 0;
+
+  final debouncer = Debouncer(duration: Duration(milliseconds: 750));
+
+  final StreamController<List<Movie>> _suggestionsStreamController =
+      new StreamController.broadcast();
+  Stream<List<Movie>> get suggestionStream =>
+      this._suggestionsStreamController.stream;
 
   MoviesProvider() {
     print('MoviesProvider inicializado');
@@ -111,5 +120,19 @@ class MoviesProvider extends ChangeNotifier {
     } catch (e) {
       throw ErrorWidget.withDetails(message: e.toString());
     }
+  }
+
+  void getSuggestionsByQuery(String searchTerm) {
+    debouncer.value = '';
+    debouncer.onValue = (value) async {
+      final results = await this.searchMovies(value);
+      this._suggestionsStreamController.add(results);
+    };
+
+    final timer = Timer.periodic(Duration(milliseconds: 300), (_) {
+      debouncer.value = searchTerm;
+    });
+
+    Future.delayed(Duration(milliseconds: 301)).then((_$) => timer.cancel());
   }
 }
